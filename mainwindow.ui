@@ -70,7 +70,7 @@ padding: 10px;</string>
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_2">
              <item>
-              <widget class="QPushButton" name="pushButton">
+              <widget class="QPushButton" name="BtnStart">
                <property name="text">
                 <string>Start</string>
                </property>
