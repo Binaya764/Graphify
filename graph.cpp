@@ -4,10 +4,6 @@ Graph::Graph(int n) {
     adjList.resize(n);
 }
 
-void Graph::addNode() {
-    adjList.push_back({});
-}
-
 void Graph::addEdge(int u, int v, int weight) {
     adjList[u].push_back({v, weight});
     adjList[v].push_back({u, weight}); // undirected

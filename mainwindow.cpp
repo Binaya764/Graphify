@@ -1,27 +1,43 @@
 #include "mainwindow.h"
-#include "./ui_mainwindow.h"
+#include "ui_mainwindow.h"
 #include <QGraphicsTextItem>
-#include <QtMath>
-QColor softBlue(111, 168, 220); // R=111, G=168, B=220
-QBrush brush(softBlue);
-
+#include <QTimer>
+#include <cmath>
+#include <iostream>
+using namespace std;
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
+    : QMainWindow(parent),
+    ui(new Ui::MainWindow),
+    graph(6),
+    currentStep(0)
 {
-    ui->setupUi(this);
-    scene = new QGraphicsScene(this);
-    ui->graphicsView->setScene(scene);
-    ui->graphicsView->setRenderHint(QPainter::Antialiasing, true);
-    ui->graphicsView->setRenderHint(QPainter::TextAntialiasing, true);
-    ui->graphicsView->setRenderHint(QPainter::SmoothPixmapTransform, true);
-    ui->graphicsView->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
-    ui->graphicsView->setResizeAnchor(QGraphicsView::AnchorViewCenter);
-    ui->graphicsView->setScene(scene);
+    ui->setupUi(this);   // 🔥 THIS loads mainwindow.ui
 
-    setupGraph();
-    generatePositions();
+    scene = new QGraphicsScene(this);
+    ui->graphicsView->setScene(scene);   // graphicsView from UI
+
+    timer = new QTimer(this);
+    timer->setInterval(1000);
+
+    connect(timer, &QTimer::timeout,
+            this, &MainWindow::next_step);
+    connect(ui->BtnStart,
+            &QPushButton::clicked,
+            this,
+            &MainWindow::startDijkstra);
+
+    // Predefined graph
+    graph.addEdge(0, 1, 4);
+    graph.addEdge(0, 2, 2);
+    graph.addEdge(1, 2, 1);
+    graph.addEdge(1, 3, 5);
+    graph.addEdge(2, 3, 8);
+    graph.addEdge(2, 4, 10);
+    graph.addEdge(3, 4, 2);
+    graph.addEdge(3, 5, 6);
+    graph.addEdge(4, 5, 3);
+
     drawGraph();
 }
 
@@ -29,90 +45,69 @@ MainWindow::~MainWindow()
 {
     delete ui;
 }
-
-void MainWindow::on_BtnStart_clicked()
-{
-    qDebug() << "Button clicked";
-
-}
-
-void MainWindow::setupGraph()
-{
-    graph.resize(4);
-
-    graph[0].push_back({1, 5});
-    graph[0].push_back({2, 3});
-
-    graph[1].push_back({2, 2});
-    graph[1].push_back({3, 6});
-
-    graph[2].push_back({3, 7});
-}
-
-void MainWindow::generatePositions()
-{
-    int n = graph.size();
-    int centerX = 250;
-    int centerY = 250;
-    int radius = 150;
-
-    for (int i = 0; i < n; i++) {
-        double angle = 2 * M_PI * i / n;
-
-        double x = centerX + radius * cos(angle);
-        double y = centerY + radius * sin(angle);
-
-        positions.push_back(QPointF(x, y));
-    }
-}
-
 void MainWindow::drawGraph()
 {
+    int n = graph.size();
+    int radius = 150;
+    int centerX = 250;
+    int centerY = 250;
 
+    const auto& adj = graph.getAdjList();
 
-    // Draw Edges
-    for (int i = 0; i < graph.size(); i++) {
-        for (Edge e : graph[i]) {
+    std::vector<QPointF> positions;
 
-            QPointF p1 = positions[i];
-            QPointF p2 = positions[e.to];
+    //node
+    for(int i = 0; i < n; i++) {
+        double angle = 2 * M_PI * i / n;
+        int x = centerX + radius * cos(angle);
+        int y = centerY + radius * sin(angle);
 
-            scene->addLine(p1.x() + 20,
-                           p1.y() + 20,
-                           p2.x() + 20,
-                           p2.y() + 20,
-                           QPen(Qt::black));
+        positions.push_back(QPointF(x, y));
 
-            QGraphicsTextItem *weightText =
-                scene->addText(QString::number(e.weight));
+        QGraphicsEllipseItem* node =
+            scene->addEllipse(x, y, 40, 40,
+                              QPen(Qt::black),
+                              QBrush(Qt::white));
 
-            weightText->setDefaultTextColor(Qt::black);
-            QFont font("Segoe UI", 12);
-            weightText->setFont(font);
+        nodeItems.push_back(node);
+        scene->addText(QString::number(i))->setPos(x+12, y+8);
+    }
+    //edge
+    for(int u = 0; u < n; u++) {
+        for(const Edge& e : adj[u]) {
+            if(u < e.to) {
+                scene->addLine(QLineF(positions[u]+QPointF(20,20),
+                                      positions[e.to]+QPointF(20,20)));
 
-
-            weightText->setPos((p1.x() -3+ p2.x()) / 2,
-                               (p1.y() + p2.y()) / 2);
-
+                QPointF mid = (positions[u] + positions[e.to]) / 2;
+                scene->addText(QString::number(e.weight))->setPos(mid);
+            }
         }
     }
-
-    // Draw Nodes
-    for (int i = 0; i < graph.size(); i++) {
-
-        QGraphicsEllipseItem *node =
-            scene->addEllipse(positions[i].x(),
-                              positions[i].y(),
-                              40, 40,
-                              QPen(Qt::black),
-                              QBrush(softBlue));
-
-        nodes.push_back(node);
-
-        QGraphicsTextItem *text =
-            scene->addText(QString::number(i));
-
-        text->setPos(positions[i].x() + 15,
-                     positions[i].y() + 10);
-    }
 }
+
+void MainWindow::startDijkstra()
+{
+    steps = Dijkstra::run(graph, 0); // Source = 0
+    currentStep = 0;
+    timer->start();
+}
+void MainWindow::next_step()
+{
+    if(currentStep >= steps.size()) {
+        timer->stop();
+        return;
+    }
+
+    // Reset all nodes to white
+    for(auto node : nodeItems)
+        node->setBrush(QBrush(Qt::white));
+
+    int u = steps[currentStep].currentNode;
+
+    // Highlight current node
+    nodeItems[u]->setBrush(QBrush(Qt::yellow));
+
+    currentStep++;
+}
+

@@ -10,9 +10,8 @@ struct Edge {
 
 class Graph {
 public:
-    Graph(int n = 0);
+    Graph(int n);
 
-    void addNode();
     void addEdge(int u, int v, int weight);
 
     int size() const;

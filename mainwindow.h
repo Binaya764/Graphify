@@ -4,18 +4,12 @@
 #include <QMainWindow>
 #include <QGraphicsScene>
 #include <QGraphicsEllipseItem>
-#include <QVector>
+#include "graph.h"
+#include "dijkstra.h"
 
 QT_BEGIN_NAMESPACE
-namespace Ui {
-class MainWindow;
-}
+namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
-struct Edge {
-    int to;         //Destination node
-    int weight;     //weight of node
-};
-
 
 class MainWindow : public QMainWindow
 {
@@ -26,18 +20,20 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_BtnStart_clicked();
+    void drawGraph();
+    void startDijkstra();
+    void next_step();
+
 
 private:
     Ui::MainWindow *ui;
     QGraphicsScene *scene;
 
-    QVector<QVector<Edge>> graph;
-    QVector<QGraphicsEllipseItem*> nodes;
-    QVector<QPointF> positions;
-
-    void setupGraph();
-    void generatePositions();
-    void drawGraph();
+    Graph graph;
+    std::vector<Step> steps;
+    std::vector<QGraphicsEllipseItem*> nodeItems;
+    int currentStep;
+    QTimer *timer;
 };
-#endif // MAINWINDOW_H
+
+#endif
