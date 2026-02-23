@@ -3,8 +3,7 @@
 #include <QGraphicsTextItem>
 #include <QTimer>
 #include <cmath>
-#include <iostream>
-using namespace std;
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
@@ -12,14 +11,21 @@ MainWindow::MainWindow(QWidget *parent)
     graph(6),
     currentStep(0)
 {
-    ui->setupUi(this);   // 🔥 THIS loads mainwindow.ui
-
+    ui->setupUi(this);
     scene = new QGraphicsScene(this);
     ui->graphicsView->setScene(scene);   // graphicsView from UI
-
+    ui->graphicsView->setRenderHint(QPainter::Antialiasing, true);
     timer = new QTimer(this);
-    timer->setInterval(1000);
+    timer->setInterval(1500);
 
+    // After ui->setupUi(this);
+    ui->tableView->setColumnCount(3); // Step | Visited Node | Shortest Distance
+    QStringList headers;
+    headers << "Node" << "Distance" << "Visited";
+    ui->tableView->setHorizontalHeaderLabels(headers);
+    ui->tableView->horizontalHeader()->setStretchLastSection(true);
+    ui->tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->tableView->scrollToBottom();
     connect(timer, &QTimer::timeout,
             this, &MainWindow::next_step);
     connect(ui->BtnStart,
@@ -67,10 +73,18 @@ void MainWindow::drawGraph()
         QGraphicsEllipseItem* node =
             scene->addEllipse(x, y, 40, 40,
                               QPen(Qt::black),
-                              QBrush(Qt::white));
+                              QBrush(QColor(0x00, 0xE5, 0xFF)));
 
+        node->setZValue(0);   // circle behind text
         nodeItems.push_back(node);
-        scene->addText(QString::number(i))->setPos(x+12, y+8);
+
+        QGraphicsTextItem* label =
+            scene->addText(QString::number(i));
+
+        label->setFont(QFont("Arial", 12, QFont::Bold));
+        label->setDefaultTextColor(Qt::black);
+        label->setPos(x + 12, y + 8);
+        label->setZValue(1);   // text above circle
     }
     //edge
     for(int u = 0; u < n; u++) {
@@ -88,26 +102,114 @@ void MainWindow::drawGraph()
 
 void MainWindow::startDijkstra()
 {
-    steps = Dijkstra::run(graph, 0); // Source = 0
     currentStep = 0;
+
+    int n = graph.size();
+
+    ui->tableView->setRowCount(n);
+
+    for(int i = 0; i < n; i++)
+    {
+        ui->tableView->setItem(i, 0,
+                               new QTableWidgetItem(QString::number(i)));
+
+        ui->tableView->setItem(i, 1,
+                               new QTableWidgetItem("∞"));
+
+        ui->tableView->setItem(i, 2,
+                               new QTableWidgetItem("No"));
+    }
+
+    steps = Dijkstra::run(graph, 0);
+
     timer->start();
 }
 void MainWindow::next_step()
 {
-    if(currentStep >= steps.size()) {
+    if(currentStep >= steps.size())
+    {
         timer->stop();
         return;
     }
 
-    // Reset all nodes to white
+    Step s = steps[currentStep];
+    int u = s.currentNode;
+
+    const int INF = std::numeric_limits<int>::max();
+
+    // -------- GRAPH UPDATE --------
+
+    // Reset all nodes to default color
     for(auto node : nodeItems)
-        node->setBrush(QBrush(Qt::white));
+        node->setBrush(QBrush(QColor(0x00, 0xE5, 0xFF)));  // original blue
 
-    int u = steps[currentStep].currentNode;
+    // Color previously visited nodes light gray
+    for(int i = 0; i < currentStep; i++)
+    {
+        int visitedNode = steps[i].currentNode;
+        nodeItems[visitedNode]->setBrush(QBrush(Qt::lightGray));
+    }
 
-    // Highlight current node
+    // Highlight current node yellow
     nodeItems[u]->setBrush(QBrush(Qt::yellow));
+
+
+    // -------- TABLE UPDATE --------
+
+    for(int i = 0; i < s.dist.size(); i++)
+    {
+        QTableWidgetItem* distItem = ui->tableView->item(i, 1);
+        if(!distItem) continue;
+
+        if(s.dist[i] == INF)
+            distItem->setText("∞");
+        else
+            distItem->setText(QString::number(s.dist[i]));
+    }
+
+    QTableWidgetItem* visitedItem = ui->tableView->item(u, 2);
+    if(visitedItem)
+        visitedItem->setText("Yes");
+
+    // Highlight table row
+    for(int i = 0; i < ui->tableView->rowCount(); i++)
+    {
+        for(int col = 0; col < 3; col++)
+        {
+            QTableWidgetItem* item = ui->tableView->item(i, col);
+            if(!item) continue;
+
+            // Default background and text
+            item->setBackground(Qt::white);
+            item->setForeground(Qt::black);
+        }
+    }
+
+    // Highlight current node row in yellow
+    for(int col = 0; col < 3; col++)
+    {
+        QTableWidgetItem* item = ui->tableView->item(u, col);
+        if(!item) continue;
+
+        item->setBackground(QColor(255, 255, 150));
+        item->setForeground(Qt::black);  // ensure text is visible
+    }
+
+    // Optional: Gray out visited nodes
+    for(int i = 0; i < currentStep; i++)
+    {
+        int visitedNode = steps[i].currentNode;
+        if(visitedNode == u) continue; // skip current
+
+        for(int col = 0; col < 3; col++)
+        {
+            QTableWidgetItem* item = ui->tableView->item(visitedNode, col);
+            if(!item) continue;
+
+            item->setBackground(Qt::lightGray);
+            item->setForeground(Qt::black);
+        }
+    }
 
     currentStep++;
 }
-

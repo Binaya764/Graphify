@@ -41,7 +41,7 @@ padding: 10px;</string>
         </property>
         <property name="maximumSize">
          <size>
-          <width>300</width>
+          <width>400</width>
           <height>16777215</height>
          </size>
         </property>
@@ -94,7 +94,7 @@ padding: 10px;</string>
               <item>
                <layout class="QVBoxLayout" name="verticalLayout_4">
                 <item>
-                 <widget class="QGraphicsView" name="graphicsView_2"/>
+                 <widget class="QTableWidget" name="tableView"/>
                 </item>
                </layout>
               </item>
