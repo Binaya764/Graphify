@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include <QGraphicsTextItem>
 #include <QTimer>
+#include <QMessageBox>
 #include <cmath>
 
 
@@ -120,7 +121,21 @@ void MainWindow::startDijkstra()
                                new QTableWidgetItem("No"));
     }
 
-    steps = Dijkstra::run(graph, 0);
+    QString text = ui->lineEdit_start->text();
+    bool ok = false;
+    int startVertex = text.toInt(&ok);
+
+    if(!ok || startVertex < 0 || startVertex >= graph.size())
+    {
+        QMessageBox::warning(this,
+                             "Invalid Input",
+                             "Please enter a valid starting vertex (0 to " +
+                                 QString::number(graph.size()-1) + ")");
+        return;
+    }
+
+    // Run Dijkstra from user input
+    steps = Dijkstra::run(graph, startVertex);
 
     timer->start();
 }
@@ -147,7 +162,7 @@ void MainWindow::next_step()
     for(int i = 0; i < currentStep; i++)
     {
         int visitedNode = steps[i].currentNode;
-        nodeItems[visitedNode]->setBrush(QBrush(Qt::lightGray));
+        nodeItems[visitedNode]->setBrush(QBrush(Qt::green));
     }
 
     // Highlight current node yellow

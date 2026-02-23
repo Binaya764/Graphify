@@ -65,7 +65,7 @@ padding: 10px;</string>
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="lineEdit"/>
+            <widget class="QLineEdit" name="lineEdit_start"/>
            </item>
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -88,7 +88,7 @@ padding: 10px;</string>
            <item>
             <widget class="QGroupBox" name="groupBox_2">
              <property name="title">
-              <string>GroupBox</string>
+              <string>Traversal Table</string>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_5">
               <item>
