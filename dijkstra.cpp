@@ -2,6 +2,8 @@
 #include <queue>
 #include <limits>
 
+
+//Uses arraybased approach for easier visualization instead of priority queue
 std::vector<Step> Dijkstra::run(const Graph& graph, int source)
 {
     int n = graph.size();

@@ -17,12 +17,12 @@ MainWindow::MainWindow(QWidget *parent)
     ui->graphicsView->setScene(scene);   // graphicsView from UI
     ui->graphicsView->setRenderHint(QPainter::Antialiasing, true);
     timer = new QTimer(this);
-    timer->setInterval(1500);
+    timer->setInterval(1800);
 
-    // After ui->setupUi(this);
-    ui->tableView->setColumnCount(3); // Step | Visited Node | Shortest Distance
+
+    ui->tableView->setColumnCount(3); // step : visited: distance
     QStringList headers;
-    headers << "Node" << "Distance" << "Visited";
+    headers << "Node" <<"Distance"<<"Visited" ;
     ui->tableView->setHorizontalHeaderLabels(headers);
     ui->tableView->horizontalHeader()->setStretchLastSection(true);
     ui->tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -76,7 +76,7 @@ void MainWindow::drawGraph()
                               QPen(Qt::black),
                               QBrush(QColor(0x00, 0xE5, 0xFF)));
 
-        node->setZValue(0);   // circle behind text
+        node->setZValue(0);
         nodeItems.push_back(node);
 
         QGraphicsTextItem* label =
@@ -85,20 +85,25 @@ void MainWindow::drawGraph()
         label->setFont(QFont("Arial", 12, QFont::Bold));
         label->setDefaultTextColor(Qt::black);
         label->setPos(x + 12, y + 8);
-        label->setZValue(1);   // text above circle
+        label->setZValue(1);   // sets text above circle
     }
     //edge
     for(int u = 0; u < n; u++) {
         for(const Edge& e : adj[u]) {
             if(u < e.to) {
+                QGraphicsLineItem* line =
                 scene->addLine(QLineF(positions[u]+QPointF(20,20),
                                       positions[e.to]+QPointF(20,20)));
+                line->setZValue(-1);
 
                 QPointF mid = (positions[u] + positions[e.to]) / 2;
 
                 QGraphicsTextItem* weightText = scene->addText(QString::number(e.weight));
                 weightText->setPos(mid);
-                weightText->setDefaultTextColor(QColor("#637081"));  // change color here
+
+                weightText->setFont(QFont("Arial", 12, QFont::Bold));
+                weightText->setZValue(1);
+                weightText->setDefaultTextColor(QColor("#637081"));
             }
         }
     }
@@ -123,7 +128,7 @@ void MainWindow::startDijkstra()
         ui->tableView->setItem(i, 2,
                                new QTableWidgetItem("No"));
     }
-
+    //Take starting vertex from the user
     QString text = ui->lineEdit_start->text();
     bool ok = false;
     int startVertex = text.toInt(&ok);
@@ -137,11 +142,12 @@ void MainWindow::startDijkstra()
         return;
     }
 
-    // Run Dijkstra from user input
+
     steps = Dijkstra::run(graph, startVertex);
 
     timer->start();
 }
+
 void MainWindow::next_step()
 {
     if(currentStep >= steps.size())
@@ -155,13 +161,11 @@ void MainWindow::next_step()
 
     const int INF = std::numeric_limits<int>::max();
 
-    // -------- GRAPH UPDATE --------
-
     // Reset all nodes to default color
     for(auto node : nodeItems)
         node->setBrush(QBrush(QColor(0x00, 0xE5, 0xFF)));  // original blue
 
-    // Color previously visited nodes light gray
+    // Color previously visited nodes green
     for(int i = 0; i < currentStep; i++)
     {
         int visitedNode = steps[i].currentNode;
@@ -180,7 +184,7 @@ void MainWindow::next_step()
         if(!distItem) continue;
 
         if(s.dist[i] == INF)
-            distItem->setText("∞");
+            distItem->setText(QChar(0x221E));   //infinity symbol
         else
             distItem->setText(QString::number(s.dist[i]));
     }
@@ -213,7 +217,7 @@ void MainWindow::next_step()
         item->setForeground(Qt::black);  // ensure text is visible
     }
 
-    // Optional: Gray out visited nodes
+
     for(int i = 0; i < currentStep; i++)
     {
         int visitedNode = steps[i].currentNode;
