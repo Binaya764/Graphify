@@ -95,7 +95,10 @@ void MainWindow::drawGraph()
                                       positions[e.to]+QPointF(20,20)));
 
                 QPointF mid = (positions[u] + positions[e.to]) / 2;
-                scene->addText(QString::number(e.weight))->setPos(mid);
+
+                QGraphicsTextItem* weightText = scene->addText(QString::number(e.weight));
+                weightText->setPos(mid);
+                weightText->setDefaultTextColor(QColor("#637081"));  // change color here
             }
         }
     }
@@ -162,14 +165,14 @@ void MainWindow::next_step()
     for(int i = 0; i < currentStep; i++)
     {
         int visitedNode = steps[i].currentNode;
-        nodeItems[visitedNode]->setBrush(QBrush(Qt::green));
+        nodeItems[visitedNode]->setBrush(QBrush(QColor("#A7CAB1")));
     }
 
     // Highlight current node yellow
     nodeItems[u]->setBrush(QBrush(Qt::yellow));
 
 
-    // -------- TABLE UPDATE --------
+    //Table update
 
     for(int i = 0; i < s.dist.size(); i++)
     {
