@@ -57,3 +57,10 @@ This project aims to display the inner workings of the Dijkstra (single source s
     * Select your kit (e.g., Desktop Qt 6.5.0 MSVC2019 64bit).
     * Press `Ctrl + R` to build and run the application.
 
+---
+
+## 📄 Project Report
+
+[Click here to view the full report](./Project_Report/Graphify_Report.pdf)
+
+
